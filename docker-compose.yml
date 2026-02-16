@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  portfolio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - portfolio_data:/root
+    environment:
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+
+volumes:
+  portfolio_data:
