@@ -4,16 +4,12 @@ Crypto Portfolio CLI - Track your cryptocurrency portfolio with live prices and 
 """
 
 import json
-import os
 from pathlib import Path
-from typing import Optional
 
 import click
 import requests
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
-from rich.text import Text
 
 try:
     import plotext as plt

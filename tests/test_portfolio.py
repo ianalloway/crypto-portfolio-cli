@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
 
 
 # Mock the portfolio module functions
@@ -22,7 +21,7 @@ def test_get_coin_id():
 
 def test_load_portfolio_empty():
     """Test loading portfolio when no file exists."""
-    from portfolio import load_portfolio, CONFIG_FILE
+    from portfolio import load_portfolio
     
     with patch.object(Path, 'exists', return_value=False):
         portfolio = load_portfolio()
