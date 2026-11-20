@@ -106,3 +106,48 @@ def test_coin_ids_mapping():
     assert "SOL" in COIN_IDS
     assert COIN_IDS["BTC"] == "bitcoin"
     assert COIN_IDS["ETH"] == "ethereum"
+
+
+def test_eur_total_keeps_real_zero_prices_and_missing_change(monkeypatch):
+    from click.testing import CliRunner
+    import portfolio
+
+    monkeypatch.setattr(portfolio, "load_portfolio", lambda: {"holdings": {"BTC": 2, "ETH": 1}, "currency": "EUR"})
+    quotes = {"bitcoin": {"eur": 10, "eur_24h_change": None}, "ethereum": {"eur": 0}}
+    monkeypatch.setattr(portfolio, "fetch_prices", lambda *args: quotes)
+    result = CliRunner().invoke(portfolio.cli, ["show"])
+    assert result.exit_code == 0
+    assert "Total Portfolio Value: EUR 20.00" in result.output
+    assert "EUR 0.00" in result.output
+    assert "Unavailable" in result.output
+    assert "$" not in result.output
+
+
+def test_partial_quote_does_not_become_a_total_or_allocation(monkeypatch):
+    from click.testing import CliRunner
+    import portfolio
+
+    monkeypatch.setattr(portfolio, "load_portfolio", lambda: {"holdings": {"BTC": 2, "ETH": 1}, "currency": "USD"})
+    monkeypatch.setattr(portfolio, "fetch_prices", lambda *args: {"bitcoin": {"usd": 10}, "ethereum": {"usd": None}})
+    monkeypatch.setattr(portfolio, "PLOTEXT_AVAILABLE", True)
+    chart = MagicMock()
+    monkeypatch.setattr(portfolio, "plt", chart, raising=False)
+    result = CliRunner().invoke(portfolio.cli, ["show"])
+    assert result.exit_code == 0
+    assert "Total Portfolio Value: Unavailable" in result.output
+    assert "$20.00" in result.output
+    result = CliRunner().invoke(portfolio.cli, ["allocation"])
+    assert result.exit_code == 0
+    assert "Allocation unavailable" in result.output
+    chart.bar.assert_not_called()
+
+
+def test_price_command_hides_missing_prices_and_shows_real_zero(monkeypatch):
+    from click.testing import CliRunner
+    import portfolio
+
+    monkeypatch.setattr(portfolio, "fetch_prices", lambda *args: {"bitcoin": {"usd": 0, "usd_24h_change": 0}})
+    result = CliRunner().invoke(portfolio.cli, ["prices", "BTC", "ETH"])
+    assert result.exit_code == 0
+    assert "$0.00" in result.output and "+0.00%" in result.output
+    assert "Unavailable" in result.output
