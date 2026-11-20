@@ -5,6 +5,8 @@
 
 A command-line tool for tracking your cryptocurrency portfolio with live prices and terminal-based charts.
 
+The portfolio displays a total and allocation percentages when every holding has a price in the selected currency. Missing prices and daily changes appear as unavailable.
+
 ## Features
 
 - **Live Price Tracking** - Real-time prices from CoinGecko API (no API key required)

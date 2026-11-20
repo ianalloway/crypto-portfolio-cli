@@ -4,6 +4,7 @@ Crypto Portfolio CLI - Track your cryptocurrency portfolio with live prices and 
 """
 
 import json
+import math
 from pathlib import Path
 
 import click
@@ -84,6 +85,28 @@ def fetch_prices(coin_ids: list[str], currency: str = "usd") -> dict:
         return {}
 
 
+def quote_value(prices, symbol, field):
+    data = prices.get(get_coin_id(symbol)) if isinstance(prices, dict) else None
+    value = data.get(field) if isinstance(data, dict) else None
+    if type(value) in (int, float) and math.isfinite(value):
+        return value
+    return None
+
+
+def money(value, currency):
+    if value is None:
+        return "Unavailable"
+    prefix = "$" if currency.upper() == "USD" else currency.upper() + " "
+    return f"{prefix}{value:,.2f}"
+
+
+def change_label(change):
+    if change is None:
+        return "Unavailable"
+    color = "green" if change >= 0 else "red"
+    return f"[{color}]{change:+.2f}%[/{color}]"
+
+
 def fetch_price_history(coin_id: str, days: int = 30, currency: str = "usd") -> list:
     """Fetch price history from CoinGecko."""
     url = f"{COINGECKO_API}/coins/{coin_id}/market_chart"
@@ -160,28 +183,24 @@ def show():
     table.add_column("24h Change", justify="right")
     
     total_value = 0.0
-    
+    complete = True
     for symbol, amount in holdings.items():
-        coin_id = get_coin_id(symbol)
-        price_data = prices.get(coin_id, {})
-        price = price_data.get(currency.lower(), 0)
-        change_24h = price_data.get(f"{currency.lower()}_24h_change", 0)
-        value = price * amount
-        total_value += value
-        
-        change_color = "green" if change_24h >= 0 else "red"
-        change_str = f"[{change_color}]{change_24h:+.2f}%[/{change_color}]"
-        
+        price = quote_value(prices, symbol, currency.lower())
+        change = quote_value(prices, symbol, f"{currency.lower()}_24h_change")
+        value = None if price is None else price * amount
+        if value is None:
+            complete = False
+        else:
+            total_value += value
+
         table.add_row(
-            symbol,
-            f"{amount:,.4f}",
-            f"${price:,.2f}",
-            f"${value:,.2f}",
-            change_str,
+            symbol, f"{amount:,.4f}", money(price, currency),
+            money(value, currency), change_label(change),
         )
-    
+
     console.print(table)
-    console.print(f"\n[bold]Total Portfolio Value: ${total_value:,.2f}[/bold]")
+    total = money(total_value if complete else None, currency)
+    console.print(f"\n[bold]Total Portfolio Value: {total}[/bold]")
 
 
 @cli.command()
@@ -201,16 +220,10 @@ def prices(coins: tuple):
     table.add_column("24h Change", justify="right")
     
     for symbol in coins:
-        coin_id = get_coin_id(symbol)
-        data = price_data.get(coin_id, {})
-        price = data.get("usd", 0)
-        change = data.get("usd_24h_change", 0)
-        
-        change_color = "green" if change >= 0 else "red"
-        change_str = f"[{change_color}]{change:+.2f}%[/{change_color}]"
-        
-        table.add_row(symbol.upper(), f"${price:,.2f}", change_str)
-    
+        price = quote_value(price_data, symbol, "usd")
+        change = quote_value(price_data, symbol, "usd_24h_change")
+        table.add_row(symbol.upper(), money(price, "USD"), change_label(change))
+
     console.print(table)
 
 
@@ -260,8 +273,10 @@ def allocation():
     
     values = {}
     for symbol, amount in holdings.items():
-        coin_id = get_coin_id(symbol)
-        price = prices.get(coin_id, {}).get(currency.lower(), 0)
+        price = quote_value(prices, symbol, currency.lower())
+        if price is None:
+            console.print(f"[yellow]Allocation unavailable: missing {currency} price for {symbol}.[/yellow]")
+            return
         values[symbol] = price * amount
     
     total = sum(values.values())
