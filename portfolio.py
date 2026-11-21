@@ -125,7 +125,6 @@ def fetch_price_history(coin_id: str, days: int = 30, currency: str = "usd") -> 
 @click.version_option(version="1.0.0")
 def cli():
     """Crypto Portfolio CLI - Track your cryptocurrency portfolio."""
-    pass
 
 
 @cli.command()
@@ -172,7 +171,7 @@ def show():
         console.print("[yellow]Portfolio is empty. Use 'add' command to add holdings.[/yellow]")
         return
     
-    coin_ids = [get_coin_id(symbol) for symbol in holdings.keys()]
+    coin_ids = [get_coin_id(symbol) for symbol in holdings]
     prices = fetch_prices(coin_ids, currency)
     
     table = Table(title="Crypto Portfolio", show_header=True, header_style="bold cyan")
@@ -268,7 +267,7 @@ def allocation():
         console.print("[yellow]Portfolio is empty.[/yellow]")
         return
     
-    coin_ids = [get_coin_id(symbol) for symbol in holdings.keys()]
+    coin_ids = [get_coin_id(symbol) for symbol in holdings]
     prices = fetch_prices(coin_ids, currency)
     
     values = {}
@@ -327,8 +326,7 @@ def export(format: str, output: str):
         filename = f"{output}.csv"
         with open(filename, "w") as f:
             f.write("coin,amount\n")
-            for coin, amount in holdings.items():
-                f.write(f"{coin},{amount}\n")
+            f.writelines(f"{coin},{amount}\n" for coin, amount in holdings.items())
     
     console.print(f"[green]Portfolio exported to {filename}[/green]")
 
