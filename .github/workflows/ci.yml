@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'devin/1771185988-initial-commit']
   pull_request:
-    branches: [main]
+    branches: [main, 'devin/1771185988-initial-commit']
 
 jobs:
   test:
@@ -30,10 +30,10 @@ jobs:
           pip install pytest pytest-cov ruff
 
       - name: Run linter
-        run: ruff check . || true
+        run: ruff check .
 
       - name: Run tests
-        run: pytest tests/ -v --cov=. --cov-report=term-missing || true
+        run: pytest tests/ -v --cov=. --cov-report=term-missing
 
   build:
     runs-on: ubuntu-latest

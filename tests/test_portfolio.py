@@ -3,8 +3,7 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import MagicMock, patch
 
 
 # Mock the portfolio module functions
@@ -88,8 +87,9 @@ def test_fetch_prices_success(mock_get):
 @patch('portfolio.requests.get')
 def test_fetch_prices_error(mock_get):
     """Test price fetching with network error."""
-    from portfolio import fetch_prices
     import requests
+
+    from portfolio import fetch_prices
     
     mock_get.side_effect = requests.RequestException("Network error")
     
@@ -110,6 +110,7 @@ def test_coin_ids_mapping():
 
 def test_eur_total_keeps_real_zero_prices_and_missing_change(monkeypatch):
     from click.testing import CliRunner
+
     import portfolio
 
     monkeypatch.setattr(portfolio, "load_portfolio", lambda: {"holdings": {"BTC": 2, "ETH": 1}, "currency": "EUR"})
@@ -125,6 +126,7 @@ def test_eur_total_keeps_real_zero_prices_and_missing_change(monkeypatch):
 
 def test_partial_quote_does_not_become_a_total_or_allocation(monkeypatch):
     from click.testing import CliRunner
+
     import portfolio
 
     monkeypatch.setattr(portfolio, "load_portfolio", lambda: {"holdings": {"BTC": 2, "ETH": 1}, "currency": "USD"})
@@ -144,6 +146,7 @@ def test_partial_quote_does_not_become_a_total_or_allocation(monkeypatch):
 
 def test_price_command_hides_missing_prices_and_shows_real_zero(monkeypatch):
     from click.testing import CliRunner
+
     import portfolio
 
     monkeypatch.setattr(portfolio, "fetch_prices", lambda *args: {"bitcoin": {"usd": 0, "usd_24h_change": 0}})
